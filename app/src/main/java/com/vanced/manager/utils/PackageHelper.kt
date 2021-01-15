@@ -361,7 +361,8 @@ object PackageHelper {
                     else
                         process.destroy()
 
-                    throw RuntimeException(e)
+                    sendFailure(e.stackTrace.map { it.toString() }.toMutableList(), context)
+                    sendCloseDialog(context)
                 }
                 process.waitFor()
             }
