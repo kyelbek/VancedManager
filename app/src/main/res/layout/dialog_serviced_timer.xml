@@ -11,17 +11,17 @@
 
         <TextView
             android:id="@+id/serviced_header"
-            tools:text="@string/script_sleep_timer"
+            android:text="@string/script_sleep_timer"
             style="@style/DialogCardTitle" />
 
-        <com.google.android.material.slider.Slider
+        <com.vanced.manager.ui.core.ThemedMaterialSlider
             android:id="@+id/serviced_slider"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/serviced_header"
             android:layout_marginTop="24dp"
             android:valueFrom="1"
-            android:valueTo="50"/>
+            android:valueTo="15"/>
 
         <RelativeLayout
             android:layout_width="match_parent"
