@@ -15,7 +15,6 @@ import androidx.navigation.ui.setupWithNavController
 import androidx.preference.PreferenceManager.getDefaultSharedPreferences
 import com.crowdin.platform.Crowdin
 import com.crowdin.platform.LoadingStateListener
-import com.google.firebase.messaging.FirebaseMessaging
 import com.vanced.manager.BuildConfig.ENABLE_CROWDIN_AUTH
 import com.vanced.manager.BuildConfig.VERSION_CODE
 import com.vanced.manager.R
@@ -162,11 +161,6 @@ class MainActivity : AppCompatActivity() {
         when {
             firstLaunch -> {
                 DialogContainer.showSecurityDialog(this)
-                with(FirebaseMessaging.getInstance()) {
-                    subscribeToTopic("Vanced-Update")
-                    subscribeToTopic("Music-Update")
-                    subscribeToTopic("MicroG-Update")
-                }
             }
             !prefs.getBoolean("statement", true) -> DialogContainer.statementFalse(this)
             variant == "root" -> {

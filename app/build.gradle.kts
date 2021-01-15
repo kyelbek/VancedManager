@@ -2,9 +2,6 @@ plugins {
     id("com.android.application")
     kotlin("android")
     kotlin("kapt")
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
-    id("com.google.firebase.firebase-perf")
     id("androidx.navigation.safeargs.kotlin")
 }
 
@@ -16,7 +13,7 @@ android {
         minSdkVersion(21)
         targetSdkVersion(30)
         versionCode = 220
-        versionName = "2.2.0 (RootedFirebase)"
+        versionName = "2.2.0 (Rooted)"
 
         vectorDrawables.useSupportLibrary = true
 
@@ -137,10 +134,4 @@ dependencies {
 
     // Layout
     implementation("com.google.android:flexbox:2.0.1")
-
-    // Firebase
-    implementation("com.google.firebase:firebase-analytics-ktx:18.0.0")
-    implementation("com.google.firebase:firebase-crashlytics:17.3.0")
-    implementation("com.google.firebase:firebase-messaging:21.0.1")
-    implementation("com.google.firebase:firebase-perf:19.0.11")
 }

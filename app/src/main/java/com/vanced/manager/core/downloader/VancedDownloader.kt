@@ -3,8 +3,6 @@ package com.vanced.manager.core.downloader
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager.getDefaultSharedPreferences
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.ktx.logEvent
 import com.vanced.manager.R
 import com.vanced.manager.utils.AppUtils.validateTheme
 import com.vanced.manager.utils.AppUtils.vancedRootPkg
@@ -124,10 +122,6 @@ object VancedDownloader {
     fun startVancedInstall(context: Context, variant: String? = this.variant) {
         downloadProgress.value?.installing?.postValue(true)
         downloadProgress.value?.postReset()
-        FirebaseAnalytics.getInstance(context).logEvent(FirebaseAnalytics.Event.SELECT_ITEM) {
-            variant?.let { param("vanced_variant", it) }
-            theme?.let { param("vanced_theme", it) }
-        }
         if (variant == "root")
             installVancedRoot(context)
         else

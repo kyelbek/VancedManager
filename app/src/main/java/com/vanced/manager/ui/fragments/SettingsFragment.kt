@@ -8,12 +8,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.preference.PreferenceManager.getDefaultSharedPreferences
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.firebase.perf.FirebasePerformance
 import com.vanced.manager.R
-import com.vanced.manager.adapter.GetNotifAdapter
 import com.vanced.manager.core.ui.base.BindingFragment
 import com.vanced.manager.core.ui.ext.showDialog
 import com.vanced.manager.databinding.FragmentSettingsBinding
@@ -49,8 +44,6 @@ class SettingsFragment : BindingFragment<FragmentSettingsBinding>() {
     private fun bindData() {
         with(binding) {
             variant = prefs.getString("vanced_variant", "nonroot").toString()
-            bindRecycler()
-            bindFirebase()
             bindManagerVariant()
             bindServiceDTimer()
             bindClearFiles()
@@ -58,21 +51,6 @@ class SettingsFragment : BindingFragment<FragmentSettingsBinding>() {
             bindManagerAccentColor()
             bindManagerLanguage()
             selectApps.setOnClickListener { showDialog(SelectAppsDialog()) }
-        }
-    }
-
-    private fun FragmentSettingsBinding.bindRecycler() {
-        notificationsRecycler.apply {
-            layoutManager = LinearLayoutManager(requireActivity())
-            adapter = GetNotifAdapter(requireActivity())
-        }
-    }
-
-    private fun FragmentSettingsBinding.bindFirebase() {
-        firebase.setOnCheckedListener { _, isChecked ->
-            FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(isChecked)
-            FirebasePerformance.getInstance().isPerformanceCollectionEnabled = isChecked
-            FirebaseAnalytics.getInstance(requireActivity()).setAnalyticsCollectionEnabled(isChecked)
         }
     }
 
