@@ -11,6 +11,7 @@ import com.github.florent37.viewtooltip.ViewTooltip
 import com.vanced.manager.R
 import com.vanced.manager.databinding.ViewAppBinding
 import com.vanced.manager.model.DataModel
+import com.vanced.manager.model.RootDataModel
 import com.vanced.manager.ui.dialogs.AppInfoDialog
 import com.vanced.manager.ui.viewmodels.HomeViewModel
 
@@ -23,7 +24,7 @@ class AppListAdapter(
 
     val apps = mutableListOf<String>()
     private val dataModels = mutableListOf<DataModel?>()
-    private val rootDataModels = mutableListOf<DataModel?>()
+    private val rootDataModels = mutableListOf<RootDataModel?>()
     private val prefs = getDefaultSharedPreferences(context)
     private var itemCount = 0
 
@@ -75,13 +76,13 @@ class AppListAdapter(
 
     override fun onBindViewHolder(holder: ListViewHolder, position: Int) {
         holder.bind(position)
-
+        val dataModel = if (isRoot) rootDataModels[position] else dataModels[position]
         holder.appCard.setOnClickListener {
             tooltip.close()
             AppInfoDialog.newInstance(
                 appName = apps[position],
-                appIcon = dataModels[position]?.appIcon,
-                changelog = dataModels[position]?.changelog?.value
+                appIcon = dataModel?.appIcon,
+                changelog = dataModel?.changelog?.value
             ).show(context.supportFragmentManager, "info")
         }
     }
@@ -91,21 +92,27 @@ class AppListAdapter(
     init {
 
         if (prefs.getBoolean("enable_vanced", true)) {
-            dataModels.add(viewModel.vanced.value)
-            rootDataModels.add(viewModel.vancedRoot.value)
+            if (isRoot) {
+                rootDataModels.add(viewModel.vancedRootModel.value)
+            } else {
+                dataModels.add(viewModel.vancedModel.value)
+            }
             apps.add(context.getString(R.string.vanced))
             itemCount++
         }
 
         if (prefs.getBoolean("enable_music", true)) {
-            dataModels.add(viewModel.music.value)
-            rootDataModels.add(viewModel.musicRoot.value)
+            if (isRoot) {
+                rootDataModels.add(viewModel.musicRootModel.value)
+            } else {
+                dataModels.add(viewModel.musicModel.value)
+            }
             apps.add(context.getString(R.string.music))
             itemCount++
         }
 
         if (!isRoot) {
-            dataModels.add(viewModel.microg.value)
+            dataModels.add(viewModel.microgModel.value)
             apps.add(context.getString(R.string.microg))
             itemCount++
         }

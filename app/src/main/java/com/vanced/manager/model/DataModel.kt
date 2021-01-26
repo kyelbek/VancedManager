@@ -7,8 +7,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.beust.klaxon.JsonObject
 import com.vanced.manager.R
-import com.vanced.manager.utils.Extensions.lifecycleOwner
 import com.vanced.manager.utils.PackageHelper.isPackageInstalled
+import com.vanced.manager.utils.lifecycleOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,11 +32,9 @@ open class DataModel(
 
     private fun fetch() = CoroutineScope(Dispatchers.IO).launch {
         val jobj = jsonObject.value
-        isAppInstalled.postValue(isPackageInstalled(appPkg, context.packageManager))
+        isAppInstalled.postValue(isAppInstalled(appPkg))
         versionCode.postValue(jobj?.int("versionCode") ?: 0)
-        versionName.postValue(jobj?.string("version")?.removeSuffix("-vanced") ?: context.getString(
-                R.string.unavailable
-            ))
+        versionName.postValue(jobj?.string("version")?.removeSuffix("-vanced") ?: context.getString(R.string.unavailable))
         changelog.postValue(jobj?.string("changelog") ?: context.getString(R.string.unavailable))
     }
 
@@ -50,8 +48,8 @@ open class DataModel(
             }
             this?.let {
                 isAppInstalled.observe(it) {
-                    installedVersionCode.postValue(getPkgVersionCode(appPkg))
-                    installedVersionName.postValue(getPkgVersionName(appPkg))
+                    installedVersionCode.value = getPkgVersionCode(appPkg)
+                    installedVersionName.value = getPkgVersionName(appPkg)
                 }
             }
             this?.let {
@@ -64,10 +62,12 @@ open class DataModel(
         }
     }
 
+    open fun isAppInstalled(pkg: String): Boolean = isPackageInstalled(pkg, context.packageManager)
+
     private fun getPkgVersionName(pkg: String): String {
         val pm = context.packageManager
         return if (isAppInstalled.value == true) {
-            pm.getPackageInfo(pkg, 0).versionName.removeSuffix("-vanced")
+            pm?.getPackageInfo(pkg, 0)?.versionName?.removeSuffix("-vanced") ?: context.getString(R.string.unavailable)
         } else {
             context.getString(R.string.unavailable)
         }
@@ -75,12 +75,12 @@ open class DataModel(
 
     @Suppress("DEPRECATION")
     private fun getPkgVersionCode(pkg: String): Int {
+        val pm = context.packageManager
         return if (isAppInstalled.value == true) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
-                context.packageManager.getPackageInfo(pkg, 0).longVersionCode.and(0xFFFFFFFF)
-                    .toInt()
+                pm?.getPackageInfo(pkg, 0)?.longVersionCode?.and(0xFFFFFFFF)?.toInt() ?: 0
             else
-                context.packageManager.getPackageInfo(pkg, 0).versionCode
+                pm?.getPackageInfo(pkg, 0)?.versionCode ?: 0
         } else 0
     }
 

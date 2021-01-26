@@ -12,8 +12,8 @@ android {
         applicationId = "com.vanced.manager"
         minSdkVersion(21)
         targetSdkVersion(30)
-        versionCode = 220
-        versionName = "2.2.0 (Rooted)"
+        versionCode = 221
+        versionName = "2.2.1 (RootedNog)"
 
         vectorDrawables.useSupportLibrary = true
 
@@ -66,18 +66,14 @@ android {
 }
 
 fun getLanguages(): String {
-    val langs = arrayListOf("en", "bn_BD", "bn_IN", "pt_BR", "pt_PT", "zh_CN", "zh_TW")
-    val exceptions = arrayOf("bn", "pt", "zh")
-    val pattern = "-(\\w+)-".toRegex()
+    val langs = arrayListOf("en", "bn_BD", "bn_IN", "pa_IN", "pa_PK", "pt_BR", "pt_PT", "zh_CN", "zh_TW")
+    val exceptions = arrayOf("bn", "pa", "pt", "zh")
 
     File("$projectDir/src/main/res").listFiles()?.forEach { dir ->
         if (dir.name.startsWith("values-") && !dir.name.contains("v23")) {
-            val match = pattern.find(dir.name)
-            if (match != null) {
-                val matchedDir = match.value.removeSurrounding("-")
-                if (!exceptions.any { matchedDir == it }) {
-                    langs.add(matchedDir)
-                }
+            val dirname = dir.name.substringAfter("-").substringBefore("-")
+            if (!exceptions.any { dirname == it }) {
+                langs.add(dirname)
             }
         }
     }
@@ -111,7 +107,7 @@ dependencies {
 
     //Appearance
     implementation("com.github.madrapps:pikolo:2.0.1")
-    implementation("com.google.android.material:material:1.3.0-beta01")
+    implementation("com.google.android.material:material:1.3.0-rc01")
 
     // JSON parser
     implementation("com.beust:klaxon:5.4")
@@ -134,4 +130,5 @@ dependencies {
 
     // Layout
     implementation("com.google.android:flexbox:2.0.1")
+
 }
