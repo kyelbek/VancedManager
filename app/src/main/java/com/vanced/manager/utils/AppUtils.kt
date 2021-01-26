@@ -9,7 +9,6 @@ import com.vanced.manager.R
 import com.vanced.manager.ui.dialogs.AppDownloadDialog
 import com.vanced.manager.ui.fragments.HomeFragment
 import com.vanced.manager.utils.DownloadHelper.downloadProgress
-import com.vanced.manager.utils.InternetTools.getSha256
 import kotlinx.coroutines.*
 import java.io.File
 import java.io.IOException
@@ -23,6 +22,7 @@ object AppUtils: CoroutineScope by CoroutineScope(Dispatchers.IO) {
     const val musicRootPkg = "com.google.android.apps.youtube.music"
     const val microgPkg = "com.mgoogle.android.gms"
     const val managerPkg = APPLICATION_ID
+    const val playStorePkg = "com.android.vending"
 
     fun sendRefresh(context: Context): Job {
         return launch {
@@ -60,6 +60,16 @@ object AppUtils: CoroutineScope by CoroutineScope(Dispatchers.IO) {
         }
     }
 
+    fun sendFailure(error: String, context: Context): Job {
+        return launch {
+            delay(700)
+            val intent = Intent(HomeFragment.INSTALL_FAILED)
+            intent.putExtra("errorMsg", getErrorMessage(error, context))
+            intent.putExtra("fullErrorMsg", error)
+            LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+        }
+    }
+
     @Throws(IOException::class)
     fun generateChecksum(data: ByteArray): String {
         try {
@@ -92,7 +102,7 @@ object AppUtils: CoroutineScope by CoroutineScope(Dispatchers.IO) {
         context: Context,
     ): Boolean {
         val themeF = File(downloadPath, "$apk.apk")
-        return runBlocking { InternetTools.checkSHA256(getSha256(hashUrl, apk, context), themeF) }
+        return runBlocking { checkSHA256(getSha256(hashUrl, apk, context), themeF) }
     }
 
     private fun getErrorMessage(status: String, context: Context): String {
@@ -111,7 +121,7 @@ object AppUtils: CoroutineScope by CoroutineScope(Dispatchers.IO) {
             status.contains("Files_Missing_VA") -> context.getString(R.string.files_missing_va)
             status.contains("Path_Missing") -> context.getString(R.string.path_missing)
             else ->
-                if (MiuiHelper.isMiui())
+                if (isMiui())
                     context.getString(R.string.installation_miui)
                 else
                     context.getString(R.string.installation_failed)
@@ -127,7 +137,7 @@ object AppUtils: CoroutineScope by CoroutineScope(Dispatchers.IO) {
             PackageInstaller.STATUS_FAILURE_INVALID -> context.getString(R.string.installation_invalid)
             PackageInstaller.STATUS_FAILURE_STORAGE -> context.getString(R.string.installation_storage)
             else ->
-                if (MiuiHelper.isMiui())
+                if (isMiui())
                     context.getString(R.string.installation_miui)
                 else
                     context.getString(R.string.installation_failed)

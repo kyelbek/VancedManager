@@ -14,13 +14,11 @@ import com.vanced.manager.BuildConfig
 import com.vanced.manager.core.installer.AppInstallerService
 import com.vanced.manager.core.installer.AppUninstallerService
 import com.vanced.manager.utils.AppUtils.musicRootPkg
+import com.vanced.manager.utils.AppUtils.playStorePkg
 import com.vanced.manager.utils.AppUtils.sendCloseDialog
 import com.vanced.manager.utils.AppUtils.sendFailure
 import com.vanced.manager.utils.AppUtils.sendRefresh
 import com.vanced.manager.utils.AppUtils.vancedRootPkg
-import com.vanced.manager.utils.Extensions.writeServiceDScript
-import com.vanced.manager.utils.InternetTools.music
-import com.vanced.manager.utils.InternetTools.vanced
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,7 +32,7 @@ import kotlin.collections.HashMap
 object PackageHelper {
 
     const val apkInstallPath = "/data/adb"
-    const val INSTALLER_TAG = "VMInstall"
+    private const val INSTALLER_TAG = "VMInstall"
     private val vancedThemes = arrayOf("black", "dark", "pink", "blue")
 
     init {
@@ -53,6 +51,16 @@ object PackageHelper {
             else -> ""
         }
     }
+
+    fun scriptExists(scriptName: String): Boolean {
+        val serviceDScript = SuFile.open("$apkInstallPath/service.d/$scriptName.sh")
+        val postFsDataScript = SuFile.open("$apkInstallPath/post-fs-data.d/$scriptName.sh")
+        if (serviceDScript.exists() && postFsDataScript.exists()) {
+            return true
+        }
+        return false
+    }
+
 
     fun getPkgNameRoot(app: String): String {
         return when (app) {
@@ -154,35 +162,46 @@ object PackageHelper {
     }
 
     fun install(path: String, context: Context) {
-        val callbackIntent = Intent(context, AppInstallerService::class.java)
-        val pendingIntent = PendingIntent.getService(context, 0, callbackIntent, 0)
-        val packageInstaller = context.packageManager.packageInstaller
-        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-        val sessionId = packageInstaller.createSession(params)
-        val session = packageInstaller.openSession(sessionId)
-        val inputStream: InputStream = FileInputStream(path)
-        val outputStream = session.openWrite("install", 0, -1)
-        val buffer = ByteArray(65536)
-        var c: Int
-        while (inputStream.read(buffer).also { c = it } != -1) {
-            outputStream.write(buffer, 0, c)
+        try {
+            val callbackIntent = Intent(context, AppInstallerService::class.java)
+            val pendingIntent = PendingIntent.getService(context, 0, callbackIntent, 0)
+            val packageInstaller = context.packageManager.packageInstaller
+            val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+            val sessionId = packageInstaller.createSession(params)
+            val session = packageInstaller.openSession(sessionId)
+            val inputStream: InputStream = FileInputStream(path)
+            val outputStream = session.openWrite("install", 0, -1)
+            val buffer = ByteArray(65536)
+            var c: Int
+            while (inputStream.read(buffer).also { c = it } != -1) {
+                outputStream.write(buffer, 0, c)
+            }
+            session.fsync(outputStream)
+            inputStream.close()
+            outputStream.close()
+            session.commit(pendingIntent.intentSender)
+        } catch (e: IOException) {
+            Log.d(INSTALLER_TAG, e.stackTraceToString())
         }
-        session.fsync(outputStream)
-        inputStream.close()
-        outputStream.close()
-        session.commit(pendingIntent.intentSender)
+
     }
 
     private fun installRootMusic(files: ArrayList<FileInfo>, context: Context): Boolean {
         files.forEach { apk ->
             if (apk.name != "root.apk") {
-                val command = Shell.su("cat ${apk.file?.path} | pm install -S ${apk.fileSize}").exec()
-                if (command.isSuccess)
+                val newPath = "/data/local/tmp/${apk.file?.name}"
+
+                //moving apk to tmp folder in order to avoid permission denials
+                Shell.su("mv ${apk.file?.path} $newPath").exec()
+                val command = Shell.su("pm install $newPath").exec()
+                Shell.su("rm $newPath").exec()
+                if (command.isSuccess) {
                     return true
-                else {
+                } else {
                     sendFailure(command.out, context)
                     sendCloseDialog(context)
                 }
+
             }
         }
         return false
@@ -196,6 +215,8 @@ object PackageHelper {
                 val modApk: FileInfo? = fileInfoList.lastOrNull { modApkBool(it.name) }
                 if (modApk != null) {
                     if (overwriteBase(modApk, fileInfoList, appVerCode, pkg, app, context)) {
+                        setInstallerPackage(context, pkg, playStorePkg)
+                        Log.d(INSTALLER_TAG, "Finished installation")
                         sendRefresh(context)
                         sendCloseDialog(context)
                     }
@@ -263,7 +284,7 @@ object PackageHelper {
             }
             doCommitSession(sessionId, context)
             Log.d(INSTALLER_TAG,"Success")
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
         return sessionId
@@ -318,19 +339,16 @@ object PackageHelper {
     private fun doCommitSession(sessionId: Int, context: Context) {
         var session: PackageInstaller.Session? = null
         try {
-            try {
-                session = context.packageManager.packageInstaller.openSession(sessionId)
-                val callbackIntent = Intent(context, AppInstallerService::class.java)
-                val pendingIntent = PendingIntent.getService(context, 0, callbackIntent, 0)
-                session.commit(pendingIntent.intentSender)
-                session.close()
-                Log.d(INSTALLER_TAG, "install request sent")
-                Log.d(INSTALLER_TAG, "doCommitSession: " + context.packageManager.packageInstaller.mySessions)
-                Log.d(INSTALLER_TAG, "doCommitSession: after session commit ")
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-
+            session = context.packageManager.packageInstaller.openSession(sessionId)
+            val callbackIntent = Intent(context, AppInstallerService::class.java)
+            val pendingIntent = PendingIntent.getService(context, 0, callbackIntent, 0)
+            session.commit(pendingIntent.intentSender)
+            session.close()
+            Log.d(INSTALLER_TAG, "install request sent")
+            Log.d(INSTALLER_TAG, "doCommitSession: " + context.packageManager.packageInstaller.mySessions)
+            Log.d(INSTALLER_TAG, "doCommitSession: after session commit ")
+        } catch (e: IOException) {
+            e.printStackTrace()
         } finally {
             session?.close()
         }
@@ -465,7 +483,7 @@ object PackageHelper {
         return false
     }
 
-    private fun linkApp(apkFPath: String, pkg:String, path: String): Boolean {
+    private fun linkApp(apkFPath: String, pkg: String, path: String): Boolean {
         Log.d(INSTALLER_TAG, "Linking app")
         Shell.su("am force-stop $pkg").exec()
         Shell.su("""for i in ${'$'}(ls /data/app/ | grep $pkg | tr " "); do umount -l "/data/app/${"$"}i/base.apk"; done """).exec()
@@ -631,6 +649,22 @@ object PackageHelper {
                 }
             }
             null
+        }
+    }
+
+    private fun setInstallerPackage(context: Context, target: String, installer: String) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+        try {
+            Log.d(INSTALLER_TAG, "Setting installer package to $installer for $target")
+            val installerUid = context.packageManager.getPackageUid(installer, 0)
+            val res = Shell.su("""su $installerUid -c 'pm set-installer $target $installer'""").exec()
+            if (res.out.any { line -> line.contains("Success") }) {
+                Log.d(INSTALLER_TAG, "Installer package successfully set")
+                return
+            }
+            Log.d(INSTALLER_TAG, "Failed setting installer package")
+        } catch (e: PackageManager.NameNotFoundException) {
+            Log.d(INSTALLER_TAG, "Installer package $installer not found. Skipping setting installer")
         }
     }
 }
