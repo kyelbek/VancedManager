@@ -13,7 +13,7 @@ android {
         minSdkVersion(21)
         targetSdkVersion(30)
         versionCode = 230
-        versionName = "2.3.0 (MicroShitMoment)"
+        versionName = "2.3.0 (noG)"
 
         vectorDrawables.useSupportLibrary = true
 
