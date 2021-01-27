@@ -16,7 +16,6 @@ import com.vanced.manager.BuildConfig
 import com.vanced.manager.core.ui.base.BindingFragment
 import com.vanced.manager.databinding.FragmentDevSettingsBinding
 import com.vanced.manager.ui.WelcomeActivity
-import com.vanced.manager.ui.dialogs.ManagerUpdateDialog
 import com.vanced.manager.ui.dialogs.URLChangeDialog
 import com.vanced.manager.utils.authCrowdin
 
@@ -38,7 +37,6 @@ class DevSettingsFragment : BindingFragment<FragmentDevSettingsBinding>() {
     private fun bindData() {
         with(binding) {
             bindWelcomeLauncher()
-            bindForceUpdate()
             bindChannelURL()
             bindCrowdin()
             bindKernelArch()
@@ -54,15 +52,6 @@ class DevSettingsFragment : BindingFragment<FragmentDevSettingsBinding>() {
             }
             startActivity(Intent(requireContext(), WelcomeActivity::class.java))
             requireActivity().finish()
-        }
-    }
-
-    private fun FragmentDevSettingsBinding.bindForceUpdate() {
-        forceManagerUpdate.setOnClickListener {
-            ManagerUpdateDialog.newInstance(true).show(
-                requireActivity().supportFragmentManager,
-                "update_manager"
-            )
         }
     }
 

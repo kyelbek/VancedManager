@@ -20,7 +20,6 @@ import com.vanced.manager.BuildConfig.VERSION_CODE
 import com.vanced.manager.R
 import com.vanced.manager.databinding.ActivityMainBinding
 import com.vanced.manager.ui.dialogs.DialogContainer
-import com.vanced.manager.ui.dialogs.ManagerUpdateDialog
 import com.vanced.manager.ui.dialogs.URLChangeDialog
 import com.vanced.manager.ui.fragments.HomeFragmentDirections
 import com.vanced.manager.ui.fragments.SettingsFragmentDirections
@@ -63,13 +62,6 @@ class MainActivity : AppCompatActivity() {
         navHost.addOnDestinationChangedListener { _, currFrag: NavDestination, _ ->
             setDisplayHomeAsUpEnabled(currFrag.id != R.id.home_fragment)
         }
-
-        initDialogs(intent.getBooleanExtra("firstLaunch", false))
-        manager.observe(this) {
-            if (manager.value?.int("versionCode") ?: 0 > VERSION_CODE) {
-                ManagerUpdateDialog.newInstance(false).show(this)
-            }
-        }
     }
 
     override fun onBackPressed() {
@@ -105,9 +97,6 @@ class MainActivity : AppCompatActivity() {
             R.id.toolbar_settings -> {
                 navHost.navigate(HomeFragmentDirections.toSettingsFragment())
                 return true
-            }
-            R.id.toolbar_update_manager -> {
-                ManagerUpdateDialog.newInstance(false).show(supportFragmentManager, "manager_update")
             }
             R.id.dev_settings -> {
                 navHost.navigate(SettingsFragmentDirections.toDevSettingsFragment())
