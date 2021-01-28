@@ -62,6 +62,8 @@ class MainActivity : AppCompatActivity() {
         navHost.addOnDestinationChangedListener { _, currFrag: NavDestination, _ ->
             setDisplayHomeAsUpEnabled(currFrag.id != R.id.home_fragment)
         }
+
+        initDialogs(intent.getBooleanExtra("firstLaunch", false))
     }
 
     override fun onBackPressed() {
